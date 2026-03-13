@@ -12,7 +12,6 @@
   --bg: #0d1117;
   --card-bg: #161b22;
   --accent: #e94560;
-  --accent2: #4ecdc4;
   --dim: rgba(255,255,255,0.38);
   --dim2: rgba(255,255,255,0.08);
   --text: white;
@@ -221,6 +220,37 @@ input[type=range]::-webkit-slider-thumb {
 }
 .tab-btn.active { background:var(--accent); color:white; box-shadow:0 2px 10px rgba(233,69,96,.4); }
 
+/* ── APPEARANCE PILLS ── */
+.appearance-pills { display:flex; gap:8px; }
+.app-pill {
+  flex:1; padding:10px 0; border-radius:12px; border:2px solid rgba(255,255,255,.1);
+  background:transparent; color:var(--dim);
+  font-family:'Lexend',sans-serif; font-size:.85rem; font-weight:700;
+  cursor:pointer; transition:all .13s; text-align:center;
+}
+.app-pill.active { border-color:var(--accent); background:rgba(233,69,96,.15); color:var(--text); }
+body.light-mode .app-pill, body.school-mode .app-pill { border-color:rgba(0,0,0,.12); }
+body.light-mode .app-pill.active, body.school-mode .app-pill.active { background:rgba(233,69,96,.12); color:var(--text); }
+
+/* ── SCHOOL MODE ── */
+body.school-mode { --bg:#f7f5f0; --card-bg:#ffffff; --text:#2c2c2c; --dim:rgba(0,0,0,0.38); --dim2:rgba(0,0,0,0.07); }
+body.school-mode .blob { display:none; }
+body.school-mode #display-card { box-shadow:none !important; border:2px solid rgba(0,0,0,0.08); }
+body.school-mode #main-text { color:#2c2c2c !important; }
+body.school-mode .level-card { background:#fff; border-color:rgba(0,0,0,0.1); box-shadow:none; }
+body.school-mode .level-card.active-level { background:rgba(233,69,96,.06); border-color:var(--accent); }
+body.school-mode .icon-btn { background:rgba(0,0,0,0.06); color:#2c2c2c; }
+body.school-mode .icon-btn:hover { background:rgba(0,0,0,0.1); }
+body.school-mode #progress-wrap { display:none; }
+body.school-mode #info-label { display:none; }
+body.school-mode #top-bar { opacity:0.15; }
+body.school-mode #top-bar:hover { opacity:0.4; transition:opacity .3s; }
+body.school-mode .settings-panel { background:var(--bg); }
+body.school-mode .interlude-card { border-color:rgba(0,0,0,0.1); }
+body.school-mode .letter-tile { border-color:rgba(0,0,0,0.1); }
+body.school-mode .pill { border-color:rgba(0,0,0,0.1); }
+body.school-mode input[type=range] { background:rgba(0,0,0,0.12); }
+
 /* ── LIGHT MODE OVERRIDES ── */
 body.light-mode .blob { opacity:.06; }
 body.light-mode .level-card { background:white; border-color:rgba(0,0,0,0.08); }
@@ -239,6 +269,7 @@ body.light-mode input[type=range] { background:rgba(0,0,0,0.12); }
 body.light-mode .icon-btn { background:rgba(0,0,0,0.06); color:#1a1a2e; }
 body.light-mode .icon-btn:hover { background:rgba(0,0,0,0.12); }
 body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
+body.light-mode #level-indicator { background:rgba(0,0,0,.06); }
 
 /* ── DONE ── */
 #done-view { gap:20px; text-align:center; }
@@ -283,14 +314,14 @@ body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
 <div id="home-view" class="view active">
   <div id="home-title">✨ Buchstaben <span>Lernen</span></div>
   <div class="level-cards">
-    <div class="level-card active-level" data-level="1" onclick="selectLevel(1)">
+    <div class="level-card active-level" data-level="1" onclick="selectLevel(1); startFromHome()">
       <div class="level-info">
         <h3>Level 1 — Buchstaben</h3>
         <p>Einzelne Buchstaben, mit Farben oder Bildern dazwischen</p>
       </div>
       <div class="level-badge">A B C</div>
     </div>
-    <div class="level-card" data-level="2" onclick="selectLevel(2)">
+    <div class="level-card" data-level="2" onclick="selectLevel(2); startFromHome()">
       <div class="level-info">
         <h3>Level 2 — Silben</h3>
         <p>Konsonant + Vokal Silben üben: ME, KA, BI, FO …</p>
@@ -298,7 +329,6 @@ body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
       <div class="level-badge">MA MI MO</div>
     </div>
   </div>
-  <button class="btn-primary" onclick="startFromHome()" style="width:100%;margin-top:4px;">▶ Start</button>
 </div>
 
 <!-- ══════════ PLAY VIEW ══════════ -->
@@ -320,10 +350,9 @@ body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
     <div class="panel-header">
       <button class="icon-btn" id="settings-back-btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
       <h2 id="settings-title">Einstellungen</h2>
-      <button class="icon-btn" id="theme-toggle-btn" title="Tag/Nacht">
-        <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-      </button>
+      <div style="width:48px"></div>
     </div>
+
 
     <!-- ── LEVEL 1 SETTINGS ── -->
     <div id="stab-1">
@@ -340,21 +369,30 @@ body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
         </div>
 
         <div class="s-section">
+          <span class="s-label">Groß / Klein</span>
+          <div class="pill-group" id="l1-case-pills">
+            <button class="pill active" data-case="upper">ABC</button>
+            <button class="pill" data-case="lower">abc</button>
+            <button class="pill" data-case="mixed">Gemischt</button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Buchstaben auswählen</span>
+          <div class="select-row">
+            <button class="ghost-btn" onclick="selectAllLetters(true)">Alle</button>
+            <button class="ghost-btn" onclick="selectAllLetters(false)">Keine</button>
+          </div>
+          <div class="letter-grid" id="l1-letter-grid"></div>
+        </div>
+
+        <div class="s-section">
           <span class="s-label">Sessionlänge</span>
           <div class="session-pills pill-group" id="l1-session-pills">
             <button class="pill" data-n="10">10</button>
             <button class="pill active" data-n="20">20</button>
             <button class="pill" data-n="50">50</button>
             <button class="pill" data-n="0">Alle</button>
-          </div>
-        </div>
-
-        <div class="s-section">
-          <span class="s-label">Groß / Klein</span>
-          <div class="pill-group" id="l1-case-pills">
-            <button class="pill active" data-case="upper">ABC</button>
-            <button class="pill" data-case="lower">abc</button>
-            <button class="pill" data-case="mixed">Gemischt</button>
           </div>
         </div>
 
@@ -376,15 +414,6 @@ body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
           </div>
         </div>
 
-        <div class="s-section">
-          <span class="s-label">Buchstaben auswählen</span>
-          <div class="select-row">
-            <button class="ghost-btn" onclick="selectAllLetters(true)">Alle</button>
-            <button class="ghost-btn" onclick="selectAllLetters(false)">Keine</button>
-          </div>
-          <div class="letter-grid" id="l1-letter-grid"></div>
-        </div>
-
       </div>
     </div>
 
@@ -403,39 +432,11 @@ body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
         </div>
 
         <div class="s-section">
-          <span class="s-label">Sessionlänge</span>
-          <div class="session-pills pill-group" id="l2-session-pills">
-            <button class="pill" data-n="10">10</button>
-            <button class="pill active" data-n="20">20</button>
-            <button class="pill" data-n="50">50</button>
-            <button class="pill" data-n="0">Alle</button>
-          </div>
-        </div>
-
-        <div class="s-section">
           <span class="s-label">Groß / Klein</span>
           <div class="pill-group" id="l2-case-pills">
             <button class="pill active" data-case="upper">ABC</button>
             <button class="pill" data-case="lower">abc</button>
             <button class="pill" data-case="mixed">Gemischt</button>
-          </div>
-        </div>
-
-        <div class="s-section">
-          <span class="s-label">Einblendung zwischen Silben</span>
-          <div class="interlude-grid" id="l2-interlude-grid">
-            <button class="interlude-card active" data-itype="color">
-              <span class="ic-emoji">🎨</span><span class="ic-label">Farbe</span>
-            </button>
-            <button class="interlude-card" data-itype="object">
-              <span class="ic-emoji">💡</span><span class="ic-label">Objekte</span>
-            </button>
-            <button class="interlude-card" data-itype="animal">
-              <span class="ic-emoji">🦊</span><span class="ic-label">Tiere</span>
-            </button>
-            <button class="interlude-card" data-itype="monster">
-              <span class="ic-emoji">👾</span><span class="ic-label">Monster</span>
-            </button>
           </div>
         </div>
 
@@ -459,6 +460,43 @@ body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
           <div class="letter-grid" id="l2-consonant-grid"></div>
         </div>
 
+        <div class="s-section">
+          <span class="s-label">Sessionlänge</span>
+          <div class="session-pills pill-group" id="l2-session-pills">
+            <button class="pill" data-n="10">10</button>
+            <button class="pill active" data-n="20">20</button>
+            <button class="pill" data-n="50">50</button>
+            <button class="pill" data-n="0">Alle</button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Einblendung zwischen Silben</span>
+          <div class="interlude-grid" id="l2-interlude-grid">
+            <button class="interlude-card active" data-itype="color">
+              <span class="ic-emoji">🎨</span><span class="ic-label">Farbe</span>
+            </button>
+            <button class="interlude-card" data-itype="object">
+              <span class="ic-emoji">💡</span><span class="ic-label">Objekte</span>
+            </button>
+            <button class="interlude-card" data-itype="animal">
+              <span class="ic-emoji">🦊</span><span class="ic-label">Tiere</span>
+            </button>
+            <button class="interlude-card" data-itype="monster">
+              <span class="ic-emoji">👾</span><span class="ic-label">Monster</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="s-section" style="margin-top:4px;">
+      <span class="s-label">Darstellung</span>
+      <div class="appearance-pills">
+        <button class="app-pill active" data-mode="dark">🌙 Dunkel</button>
+        <button class="app-pill" data-mode="light">☀️ Hell</button>
+        <button class="app-pill" data-mode="school">🎒 Schule</button>
       </div>
     </div>
 
@@ -488,7 +526,9 @@ const ALL_LETTERS   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const ALL_VOWELS    = ['A','E','I','O','U'];
 const ALL_CONSONANTS = ALL_LETTERS.filter(l => !ALL_VOWELS.includes(l));
 
-const COLORS = ['#e74c3c','#3498db','#f1c40f','#2ecc71','#9b59b6','#e67e22','#e91e8c','#1abc9c'];
+const COLORS_DEFAULT = ['#e74c3c','#3498db','#f1c40f','#2ecc71','#9b59b6','#e67e22','#e91e8c','#1abc9c'];
+const COLORS_SCHOOL  = ['#e05252','#4a90d9','#e8c84a','#52a852'];
+function getColors() { return isSchool() ? COLORS_SCHOOL : COLORS_DEFAULT; }
 
 const INTERLUDE_SETS = {
   color:   null, // handled separately
@@ -545,12 +585,14 @@ function goHome() {
 }
 
 document.getElementById('home-btn').addEventListener('click', goHome);
-document.getElementById('theme-toggle-btn').addEventListener('click', () => {
-  const isLight = document.body.classList.toggle('light-mode');
-  const icon = document.getElementById('theme-icon');
-  icon.innerHTML = isLight
-    ? `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>` // moon
-    : `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+document.querySelectorAll('.app-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.app-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.body.classList.remove('light-mode','school-mode');
+    if (btn.dataset.mode === 'light')  document.body.classList.add('light-mode');
+    if (btn.dataset.mode === 'school') document.body.classList.add('school-mode');
+  });
 });
 document.getElementById('done-repeat-btn').addEventListener('click', () => {
   showView('play-view');
@@ -770,7 +812,7 @@ function shuffle(arr) {
 function makeInterlude(lv) {
   const type = cfg[lv].interludeType;
   if (type === 'color') {
-    return { type:'color', hex: randomFrom(COLORS) };
+    return { type:'color', hex: randomFrom(getColors()) };
   }
   const set = INTERLUDE_SETS[type];
   return { type:'emoji', emoji: randomFrom(set) };
@@ -840,10 +882,11 @@ function showItem(item) {
   setTimeout(() => {
     mainText.classList.remove('fade-out');
     const lv = activeLevel;
-    const isLight = document.body.classList.contains('light-mode');
-    const cardBg  = isLight ? '#ffffff' : '#161b22';
-    const cardShadow = isLight ? '0 24px 60px rgba(0,0,0,.12)' : '0 24px 60px rgba(0,0,0,.6)';
-    const textCol = isLight ? '#1a1a2e' : 'white';
+    const isLight  = document.body.classList.contains('light-mode');
+    const isSchoolM = isSchool();
+    const cardBg    = (isLight || isSchoolM) ? '#ffffff' : '#161b22';
+    const cardShadow = isSchoolM ? 'none' : (isLight ? '0 24px 60px rgba(0,0,0,.12)' : '0 24px 60px rgba(0,0,0,.6)');
+    const textCol   = (isLight || isSchoolM) ? '#2c2c2c' : 'white';
 
     if (item.type === 'letter') {
       const ch = applyCase(item.base, cfg[lv].caseMode);
@@ -875,10 +918,10 @@ function showItem(item) {
       doBump(); spawnStars();
 
     } else if (item.type === 'emoji') {
-      card.style.background = '#161b22';
-      card.style.boxShadow  = '0 24px 60px rgba(0,0,0,.6)';
+      card.style.background = cardBg;
+      card.style.boxShadow  = cardShadow;
       mainText.classList.add('is-interlude');
-      mainText.style.color  = 'white';
+      mainText.style.color  = textCol;
       mainText.textContent  = item.emoji;
       doBump(); spawnStars();
     }
@@ -889,7 +932,10 @@ function showItem(item) {
   }, 185);
 }
 
+function isSchool() { return document.body.classList.contains('school-mode'); }
+
 function doBump() {
+  if (isSchool()) return;
   card.classList.remove('bump');
   void card.offsetWidth;
   card.classList.add('bump');
@@ -897,6 +943,7 @@ function doBump() {
 }
 
 function spawnStars() {
+  if (isSchool()) return;
   ['⭐','✨','🌟','💫','🎉'].forEach(emoji => {
     const el = document.createElement('div');
     el.className = 'star'; el.textContent = emoji;
@@ -985,7 +1032,7 @@ function resetPlayState() {
   setPPIcon(false);
   card.style.background = '';
   card.style.boxShadow  = '';
-  mainText.style.color  = 'white';
+  mainText.style.color  = (document.body.classList.contains('light-mode') || isSchool()) ? '#2c2c2c' : 'white';
   mainText.textContent  = ['🚀','⭐','✨','🎯','💡'][Math.floor(Math.random()*5)];
   mainText.classList.add('is-interlude');
 }
@@ -1002,7 +1049,8 @@ function finish() {
 
 // Confetti
 function launchConfetti() {
-  const cols=['#e74c3c','#3498db','#f1c40f','#2ecc71','#9b59b6','#e67e22'];
+  if (isSchool()) return;
+  const cols = getColors();
   for(let i=0;i<70;i++){
     const el=document.createElement('div');
     el.className='confetti-piece';
