@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Buchstaben Lernen</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --bg: #0d1117;
+  --card-bg: #161b22;
+  --accent: #e94560;
+  --accent2: #4ecdc4;
+  --dim: rgba(255,255,255,0.38);
+  --dim2: rgba(255,255,255,0.08);
+  --text: white;
+  --text-inv: #1a1a2e;
+}
+body.light-mode {
+  --bg: #f5f0e8;
+  --card-bg: #ffffff;
+  --dim: rgba(0,0,0,0.4);
+  --dim2: rgba(0,0,0,0.07);
+  --text: #1a1a2e;
+  --text-inv: white;
+}
+body {
+  font-family:'Lexend',sans-serif;
+  background:var(--bg);
+  min-height:100dvh;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  color:var(--text); overflow:hidden;
+  touch-action:manipulation;
+  transition:background .3s, color .3s;
+}
+
+/* ── BLOBS ── */
+.blob { position:fixed; border-radius:50%; filter:blur(90px); opacity:.11; pointer-events:none; animation:drift 10s ease-in-out infinite alternate; }
+.b1 { width:520px;height:520px;background:#e94560;top:-160px;left:-160px; }
+.b2 { width:420px;height:420px;background:#4ecdc4;bottom:-130px;right:-130px;animation-delay:-4s; }
+.b3 { width:360px;height:360px;background:#ffe66d;top:38%;left:38%;animation-delay:-2s; }
+@keyframes drift { from{transform:translate(0,0)} to{transform:translate(22px,16px)} }
+
+/* ── VIEWS ── */
+.view { display:none; flex-direction:column; align-items:center; position:relative; z-index:10; width:100%; max-width:480px; padding:0 20px; pointer-events:none; }
+.view.active { display:flex; pointer-events:auto; }
+
+/* ── HOME VIEW ── */
+#home-view { gap:28px; }
+#home-title { font-weight:900; font-size:clamp(1.6rem,5vw,2.2rem); text-align:center; letter-spacing:-0.5px; }
+#home-title span { color:var(--accent); }
+.level-cards { display:flex; flex-direction:column; gap:14px; width:100%; }
+.level-card {
+  width:100%; padding:22px 24px; border-radius:20px;
+  background:var(--card-bg); border:2px solid rgba(255,255,255,0.07);
+  cursor:pointer; transition:border-color .15s, transform .12s;
+  display:flex; align-items:center; gap:18px; text-align:left;
+}
+.level-card:hover  { border-color:rgba(255,255,255,0.2); }
+.level-card:active { transform:scale(.97); }
+.level-card.active-level { border-color:var(--accent); background:rgba(233,69,96,.1); }
+.level-info h3 { font-weight:700; font-size:1.05rem; margin-bottom:3px; }
+.level-info p  { font-size:.8rem; color:var(--dim); line-height:1.4; }
+.level-badge {
+  margin-left:auto; font-size:.7rem; font-weight:700;
+  padding:4px 10px; border-radius:20px;
+  background:rgba(255,255,255,.07); color:var(--dim);
+  white-space:nowrap;
+}
+
+/* ── TOP BAR ── */
+#top-bar { width:100%; display:flex; align-items:center; justify-content:space-between; margin-bottom:0; }
+.icon-btn {
+  background:var(--dim2); border:none; border-radius:50%;
+  width:48px; height:48px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:1.2rem; transition:background .15s,transform .1s; color:white;
+}
+.icon-btn:hover  { background:rgba(255,255,255,.14); }
+.icon-btn:active { transform:scale(.92); }
+
+#level-indicator {
+  font-size:.95rem; font-weight:700; color:rgba(255,255,255,.6); letter-spacing:.5px;
+}
+
+/* ── CARD ── */
+#display-card {
+  width:min(82vw,400px); height:min(82vw,400px);
+  border-radius:36px; display:flex; align-items:center; justify-content:center;
+  position:relative; cursor:pointer; overflow:hidden; user-select:none;
+  background:var(--card-bg); box-shadow:0 24px 60px rgba(0,0,0,.6);
+  transition:background .25s ease, box-shadow .25s ease;
+}
+#display-card:active { filter:brightness(.88); }
+.ripple {
+  position:absolute; border-radius:50%; background:rgba(255,255,255,.18);
+  transform:scale(0); animation:rippleAnim .5s linear; pointer-events:none;
+}
+@keyframes rippleAnim { to{transform:scale(4);opacity:0} }
+
+#main-text {
+  font-family:'Lexend',sans-serif; font-weight:500;
+  font-size:clamp(3rem,22vw,13rem); line-height:1; color:white;
+  transform:translateZ(0); backface-visibility:hidden;
+  -webkit-font-smoothing:antialiased; text-align:center;
+  padding:8px 12px; max-width:100%; word-break:break-word;
+}
+#main-text.fade-out { animation:fadeOut .18s ease forwards; }
+#main-text.fade-in  { animation:fadeIn  .22s ease forwards; }
+@keyframes fadeOut { from{opacity:1} to{opacity:0} }
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+
+/* Interlude emoji size */
+#main-text.is-interlude { font-size:clamp(5rem,30vw,13rem); }
+
+@keyframes cardBump {
+  0%,100%{transform:translateX(0) translateZ(0)}
+  25%    {transform:translateX(-10px) translateZ(0)}
+  75%    {transform:translateX(10px) translateZ(0)}
+}
+#display-card.bump { animation:cardBump .35s ease; }
+
+.star { position:absolute; pointer-events:none; font-size:1.8rem; animation:starFly .7s ease-out forwards; z-index:5; }
+@keyframes starFly {
+  from{transform:translate(0,0) scale(1);opacity:1}
+  to  {transform:translate(var(--tx),var(--ty)) scale(.2);opacity:0}
+}
+
+/* ── PROGRESS & INFO ── */
+#progress-wrap { width:100%; height:6px; background:rgba(255,255,255,.08); border-radius:100px; overflow:hidden; }
+#progress-bar  { height:100%; background:linear-gradient(90deg,#e94560,#f7971e,#ffe66d); border-radius:100px; transition:width .35s ease; width:0%; }
+#info-label { font-size:.82rem; color:var(--dim); letter-spacing:.4px; }
+
+/* ── PLAY VIEW GAPS ── */
+#play-view { gap:18px; }
+
+/* ── SETTINGS PANEL ── */
+.settings-panel {
+  width:100%; max-width:480px; max-height:88dvh;
+  overflow-y:auto; padding:20px;
+  display:flex; flex-direction:column; gap:24px;
+  position:relative; z-index:10;
+}
+.panel-header { display:flex; align-items:center; gap:14px; }
+.panel-header h2 { font-weight:700; font-size:1.2rem; flex:1; }
+
+.s-section { width:100%; }
+.s-label {
+  display:block; font-size:.75rem; font-weight:700; color:var(--dim);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;
+}
+
+/* Speed */
+.speed-row { display:flex; align-items:center; gap:10px; }
+.speed-row .emoji { font-size:1.3rem; }
+input[type=range] {
+  flex:1; -webkit-appearance:none; height:6px; border-radius:3px;
+  background:rgba(255,255,255,.14); outline:none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:22px; height:22px; border-radius:50%;
+  background:var(--accent); cursor:pointer; box-shadow:0 2px 8px rgba(233,69,96,.5);
+}
+.speed-val { font-size:.85rem; color:var(--dim); min-width:32px; text-align:right; }
+
+/* Pills */
+.pill-group { display:flex; gap:8px; flex-wrap:wrap; }
+.pill {
+  padding:9px 16px; border-radius:12px;
+  border:2px solid rgba(255,255,255,.1); background:transparent;
+  color:var(--dim); font-family:'Lexend',sans-serif; font-size:.88rem; font-weight:700;
+  cursor:pointer; transition:all .13s; white-space:nowrap;
+}
+.pill.active { border-color:var(--accent); background:rgba(233,69,96,.15); color:white; }
+
+/* Session length */
+.session-pills { display:flex; gap:8px; }
+.session-pills .pill { flex:1; text-align:center; }
+
+/* Letter grid */
+.letter-grid { display:grid; grid-template-columns:repeat(9,1fr); gap:6px; }
+.letter-tile {
+  aspect-ratio:1; border-radius:10px;
+  border:2px solid rgba(255,255,255,.1); background:transparent; color:var(--dim);
+  font-family:'Lexend',sans-serif; font-weight:700; font-size:clamp(.6rem,2.2vw,.9rem);
+  cursor:pointer; transition:all .12s; display:flex; align-items:center; justify-content:center;
+}
+.letter-tile.selected { border-color:var(--accent); background:rgba(233,69,96,.18); color:white; }
+.select-row { display:flex; gap:8px; margin-bottom:10px; }
+.ghost-btn {
+  background:none; border:1px solid rgba(255,255,255,.18); color:var(--dim);
+  font-family:'Lexend',sans-serif; font-size:.78rem; padding:5px 12px; border-radius:20px;
+  cursor:pointer; transition:all .13s;
+}
+.ghost-btn:hover { border-color:white; color:white; }
+
+/* Interlude type grid */
+.interlude-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.interlude-card {
+  padding:14px 12px; border-radius:14px; border:2px solid rgba(255,255,255,.1);
+  background:transparent; color:var(--dim); cursor:pointer; transition:all .13s;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  font-family:'Lexend',sans-serif;
+}
+.interlude-card .ic-emoji { font-size:1.8rem; }
+.interlude-card .ic-label { font-size:.8rem; font-weight:700; }
+.interlude-card.active { border-color:var(--accent); background:rgba(233,69,96,.15); color:white; }
+
+/* ── LEVEL TAB BAR in settings ── */
+.tab-bar {
+  display:flex; gap:0; width:100%;
+  background:rgba(255,255,255,.05); border-radius:12px; padding:4px;
+}
+.tab-btn {
+  flex:1; padding:9px 0; border-radius:9px; border:none;
+  background:transparent; color:var(--dim);
+  font-family:'Lexend',sans-serif; font-size:.85rem; font-weight:700;
+  cursor:pointer; transition:all .13s;
+}
+.tab-btn.active { background:var(--accent); color:white; box-shadow:0 2px 10px rgba(233,69,96,.4); }
+
+/* ── LIGHT MODE OVERRIDES ── */
+body.light-mode .blob { opacity:.06; }
+body.light-mode .level-card { background:white; border-color:rgba(0,0,0,0.08); }
+body.light-mode .level-card.active-level { background:rgba(233,69,96,.08); border-color:var(--accent); }
+body.light-mode .level-badge { background:rgba(0,0,0,0.06); }
+body.light-mode #display-card { background:#ffffff !important; box-shadow:0 24px 60px rgba(0,0,0,.15) !important; }
+body.light-mode #main-text { color:#1a1a2e !important; }
+body.light-mode .settings-panel { background:var(--bg); }
+body.light-mode .interlude-card { border-color:rgba(0,0,0,0.12); }
+body.light-mode .interlude-card.active { background:rgba(233,69,96,.12); border-color:var(--accent); }
+body.light-mode .letter-tile { border-color:rgba(0,0,0,0.12); }
+body.light-mode .letter-tile.selected { background:rgba(233,69,96,.15); border-color:var(--accent); }
+body.light-mode .pill { border-color:rgba(0,0,0,0.12); }
+body.light-mode .pill.active { background:rgba(233,69,96,.12); border-color:var(--accent); }
+body.light-mode input[type=range] { background:rgba(0,0,0,0.12); }
+body.light-mode .icon-btn { background:rgba(0,0,0,0.06); color:#1a1a2e; }
+body.light-mode .icon-btn:hover { background:rgba(0,0,0,0.12); }
+body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
+
+/* ── DONE ── */
+#done-view { gap:20px; text-align:center; }
+#done-view h2 {
+  font-weight:900; font-size:clamp(2rem,8vw,3.5rem);
+  background:linear-gradient(135deg,#ffe66d,#e94560);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+#done-view p { color:var(--dim); font-size:1.05rem; }
+.btn-primary {
+  font-family:'Lexend',sans-serif; font-weight:700; font-size:1.05rem;
+  padding:15px 38px; border-radius:50px; border:none; cursor:pointer;
+  background:var(--accent); color:white; box-shadow:0 8px 24px rgba(233,69,96,.45);
+  transition:transform .12s;
+}
+.btn-primary:hover  { transform:translateY(-2px); }
+.btn-primary:active { transform:scale(.97); }
+
+/* Confetti */
+.confetti-piece {
+  position:fixed; top:-12px; pointer-events:none; z-index:200;
+  animation:confettiFall var(--dur) ease-in forwards;
+}
+@keyframes confettiFall {
+  0%  {transform:translateY(0) translateX(0) rotate(0deg);opacity:1}
+  100%{transform:translateY(110vh) translateX(var(--dx)) rotate(720deg);opacity:0}
+}
+
+/* Level pill in top bar */
+#level-indicator {
+  font-size:.72rem; font-weight:700; color:var(--dim);
+  background:rgba(255,255,255,.07); padding:4px 10px; border-radius:20px;
+}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+
+<!-- ══════════ HOME VIEW ══════════ -->
+<div id="home-view" class="view active">
+  <div id="home-title">✨ Buchstaben <span>Lernen</span></div>
+  <div class="level-cards">
+    <div class="level-card active-level" data-level="1" onclick="selectLevel(1)">
+      <div class="level-info">
+        <h3>Level 1 — Buchstaben</h3>
+        <p>Einzelne Buchstaben, mit Farben oder Bildern dazwischen</p>
+      </div>
+      <div class="level-badge">A B C</div>
+    </div>
+    <div class="level-card" data-level="2" onclick="selectLevel(2)">
+      <div class="level-info">
+        <h3>Level 2 — Silben</h3>
+        <p>Konsonant + Vokal Silben üben: ME, KA, BI, FO …</p>
+      </div>
+      <div class="level-badge">MA MI MO</div>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="startFromHome()" style="width:100%;margin-top:4px;">▶ Start</button>
+</div>
+
+<!-- ══════════ PLAY VIEW ══════════ -->
+<div id="play-view" class="view">
+  <div id="top-bar">
+    <button class="icon-btn" id="home-btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+    <div id="level-indicator">Level 1</div>
+    <button class="icon-btn" id="settings-shortcut-btn" style="background:none;opacity:0.4;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
+  <div id="display-card"><div id="main-text">A</div></div>
+  <div id="progress-wrap"><div id="progress-bar"></div></div>
+  <div id="info-label">Tippe auf die Karte · zum Starten</div>
+  <button class="icon-btn" id="play-pause-btn" style="width:72px;height:72px;background:rgba(255,255,255,0.12);margin-top:4px;"><span id="pp-icon-wrap"><svg id="pp-svg" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg></span></button>
+</div>
+
+<!-- ══════════ SETTINGS VIEW ══════════ -->
+<div id="settings-view" class="view">
+  <div class="settings-panel">
+    <div class="panel-header">
+      <button class="icon-btn" id="settings-back-btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+      <h2 id="settings-title">Einstellungen</h2>
+      <button class="icon-btn" id="theme-toggle-btn" title="Tag/Nacht">
+        <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+
+    <!-- ── LEVEL 1 SETTINGS ── -->
+    <div id="stab-1">
+      <div style="display:flex;flex-direction:column;gap:22px;">
+
+        <div class="s-section">
+          <span class="s-label">Geschwindigkeit</span>
+          <div class="speed-row">
+            <span class="emoji">🐇</span>
+            <input type="range" id="l1-speed" min="600" max="4000" value="1800" step="100">
+            <span class="emoji">🐢</span>
+            <span class="speed-val" id="l1-speed-val">1.8s</span>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Sessionlänge</span>
+          <div class="session-pills pill-group" id="l1-session-pills">
+            <button class="pill" data-n="10">10</button>
+            <button class="pill active" data-n="20">20</button>
+            <button class="pill" data-n="50">50</button>
+            <button class="pill" data-n="0">Alle</button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Groß / Klein</span>
+          <div class="pill-group" id="l1-case-pills">
+            <button class="pill active" data-case="upper">ABC</button>
+            <button class="pill" data-case="lower">abc</button>
+            <button class="pill" data-case="mixed">Gemischt</button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Einblendung zwischen Buchstaben</span>
+          <div class="interlude-grid" id="l1-interlude-grid">
+            <button class="interlude-card active" data-itype="color">
+              <span class="ic-emoji">🎨</span><span class="ic-label">Farbe</span>
+            </button>
+            <button class="interlude-card" data-itype="object">
+              <span class="ic-emoji">💡</span><span class="ic-label">Objekte</span>
+            </button>
+            <button class="interlude-card" data-itype="animal">
+              <span class="ic-emoji">🦊</span><span class="ic-label">Tiere</span>
+            </button>
+            <button class="interlude-card" data-itype="monster">
+              <span class="ic-emoji">👾</span><span class="ic-label">Monster</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Buchstaben auswählen</span>
+          <div class="select-row">
+            <button class="ghost-btn" onclick="selectAllLetters(true)">Alle</button>
+            <button class="ghost-btn" onclick="selectAllLetters(false)">Keine</button>
+          </div>
+          <div class="letter-grid" id="l1-letter-grid"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── LEVEL 2 SETTINGS ── -->
+    <div id="stab-2" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:22px;">
+
+        <div class="s-section">
+          <span class="s-label">Geschwindigkeit</span>
+          <div class="speed-row">
+            <span class="emoji">🐇</span>
+            <input type="range" id="l2-speed" min="600" max="4000" value="2000" step="100">
+            <span class="emoji">🐢</span>
+            <span class="speed-val" id="l2-speed-val">2.0s</span>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Sessionlänge</span>
+          <div class="session-pills pill-group" id="l2-session-pills">
+            <button class="pill" data-n="10">10</button>
+            <button class="pill active" data-n="20">20</button>
+            <button class="pill" data-n="50">50</button>
+            <button class="pill" data-n="0">Alle</button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Groß / Klein</span>
+          <div class="pill-group" id="l2-case-pills">
+            <button class="pill active" data-case="upper">ABC</button>
+            <button class="pill" data-case="lower">abc</button>
+            <button class="pill" data-case="mixed">Gemischt</button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Einblendung zwischen Silben</span>
+          <div class="interlude-grid" id="l2-interlude-grid">
+            <button class="interlude-card active" data-itype="color">
+              <span class="ic-emoji">🎨</span><span class="ic-label">Farbe</span>
+            </button>
+            <button class="interlude-card" data-itype="object">
+              <span class="ic-emoji">💡</span><span class="ic-label">Objekte</span>
+            </button>
+            <button class="interlude-card" data-itype="animal">
+              <span class="ic-emoji">🦊</span><span class="ic-label">Tiere</span>
+            </button>
+            <button class="interlude-card" data-itype="monster">
+              <span class="ic-emoji">👾</span><span class="ic-label">Monster</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Vokale</span>
+          <div class="pill-group" id="l2-vowel-pills">
+            <button class="pill active" data-v="A">A</button>
+            <button class="pill active" data-v="E">E</button>
+            <button class="pill active" data-v="I">I</button>
+            <button class="pill active" data-v="O">O</button>
+            <button class="pill active" data-v="U">U</button>
+          </div>
+        </div>
+
+        <div class="s-section">
+          <span class="s-label">Konsonanten</span>
+          <div class="select-row">
+            <button class="ghost-btn" onclick="selectAllConsonants(true)">Alle</button>
+            <button class="ghost-btn" onclick="selectAllConsonants(false)">Keine</button>
+          </div>
+          <div class="letter-grid" id="l2-consonant-grid"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════ DONE VIEW ══════════ -->
+<div id="done-view" class="view">
+  <div class="big-emoji">🎉</div>
+  <h2>Super gemacht!</h2>
+  <p id="done-msg">Session abgeschlossen!</p>
+  <div style="display:flex;gap:24px;margin-top:8px;">
+    <button class="icon-btn" onclick="goHome()" style="width:64px;height:64px;" title="Zurück zum Menü">
+      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </button>
+    <button class="icon-btn" id="done-repeat-btn" style="width:64px;height:64px;background:var(--accent);box-shadow:0 6px 24px rgba(233,69,96,0.5);" title="Nochmal">
+      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+const ALL_LETTERS   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const ALL_VOWELS    = ['A','E','I','O','U'];
+const ALL_CONSONANTS = ALL_LETTERS.filter(l => !ALL_VOWELS.includes(l));
+
+const COLORS = ['#e74c3c','#3498db','#f1c40f','#2ecc71','#9b59b6','#e67e22','#e91e8c','#1abc9c'];
+
+const INTERLUDE_SETS = {
+  color:   null, // handled separately
+  object:  ['💡','🌙','⭐','🔑','🎈','🎁','🔔','💎','🏆','🎨','🚀','⚡','🌈','🍎','🎸'],
+  animal:  ['🦊','🐶','🐱','🐻','🐼','🦁','🐯','🦄','🐸','🐧','🦋','🐙','🦕','🦔','🐺'],
+  monster: ['👾','👻','🤖','🎃','🦖','🧟','👹','🧛','👽','🤡','🧌','🦠','💀','🧿','🔮'],
+};
+
+// ═══════════════════════════════════════════════════
+// SETTINGS STATE (per level)
+// ═══════════════════════════════════════════════════
+const cfg = {
+  1: {
+    speed: 1800, caseMode: 'upper', sessionCount: 20,
+    interludeType: 'color',
+    selectedLetters: new Set(ALL_LETTERS),
+  },
+  2: {
+    speed: 2000, caseMode: 'upper', sessionCount: 20,
+    interludeType: 'color',
+    selectedVowels:     new Set(ALL_VOWELS),
+    selectedConsonants: new Set(ALL_CONSONANTS),
+  },
+};
+
+let activeLevel = 1;
+
+// ═══════════════════════════════════════════════════
+// PLAYBACK STATE
+// ═══════════════════════════════════════════════════
+let sequence = [], currentIndex = 0;
+let timer = null, isRunning = false, isPaused = true;
+
+// ═══════════════════════════════════════════════════
+// DOM REFS
+// ═══════════════════════════════════════════════════
+const card        = document.getElementById('display-card');
+const mainText    = document.getElementById('main-text');
+const progressBar = document.getElementById('progress-bar');
+const infoLabel   = document.getElementById('info-label');
+const ppBtn       = document.getElementById('play-pause-btn');
+
+// ═══════════════════════════════════════════════════
+// VIEW NAVIGATION
+// ═══════════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome() {
+  clearTimeout(timer); isRunning = false; isPaused = true;
+  setPPIcon(false);
+  showView('home-view');
+}
+
+document.getElementById('home-btn').addEventListener('click', goHome);
+document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+  const isLight = document.body.classList.toggle('light-mode');
+  const icon = document.getElementById('theme-icon');
+  icon.innerHTML = isLight
+    ? `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>` // moon
+    : `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+});
+document.getElementById('done-repeat-btn').addEventListener('click', () => {
+  showView('play-view');
+  resetPlayState();
+  play();
+});
+document.getElementById('settings-shortcut-btn').addEventListener('click', () => { pause(); openSettings(); });
+document.getElementById('settings-back-btn').addEventListener('click', () => {
+  if (needsReset) { needsReset = false; resetPlayState(); }
+  showView('play-view');
+});
+
+let needsReset = false;
+
+function markReset() { needsReset = true; }
+
+function openSettings() {
+  needsReset = false;
+  switchSettingsTab(activeLevel);
+  document.getElementById('settings-title').textContent = `Level ${activeLevel} · Einstellungen`;
+  showView('settings-view');
+}
+function selectLevel(n) {
+  activeLevel = n;
+  document.querySelectorAll('.level-card').forEach(c => {
+    c.classList.toggle('active-level', parseInt(c.dataset.level) === n);
+  });
+}
+function startFromHome() {
+  document.getElementById('level-indicator').textContent = `Level ${activeLevel}`;
+  showView('play-view');
+  resetPlayState();
+}
+
+// ═══════════════════════════════════════════════════
+// SETTINGS TAB
+// ═══════════════════════════════════════════════════
+function switchSettingsTab(n) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.stab) === n));
+  document.getElementById('stab-1').style.display = n === 1 ? '' : 'none';
+  document.getElementById('stab-2').style.display = n === 2 ? '' : 'none';
+}
+
+// ═══════════════════════════════════════════════════
+// BUILD SETTINGS UI
+// ═══════════════════════════════════════════════════
+function initSettingsUI() {
+  // Speed sliders
+  ['l1','l2'].forEach((prefix, i) => {
+    const lv = i + 1;
+    const slider = document.getElementById(`${prefix}-speed`);
+    const valEl  = document.getElementById(`${prefix}-speed-val`);
+    slider.value = cfg[lv].speed;
+    valEl.textContent = (cfg[lv].speed/1000).toFixed(1)+'s';
+    slider.addEventListener('input', function() {
+      cfg[lv].speed = parseInt(this.value);
+      valEl.textContent = (cfg[lv].speed/1000).toFixed(1)+'s';
+    });
+  });
+
+  // Session pills
+  setupSessionPills('l1-session-pills', 1);
+  setupSessionPills('l2-session-pills', 2);
+
+  // Case pills
+  setupCasePills('l1-case-pills', 1);
+  setupCasePills('l2-case-pills', 2);
+
+  // Interlude grids
+  setupInterludes('l1-interlude-grid', 1);
+  setupInterludes('l2-interlude-grid', 2);
+
+  // Letter grids
+  buildLetterGrid();
+  buildConsonantGrid();
+  buildVowelPills();
+
+  // Vowel pills onclick
+  document.querySelectorAll('#l2-vowel-pills .pill').forEach(btn => {
+    const v = btn.dataset.v;
+    btn.onclick = () => {
+      if (cfg[2].selectedVowels.has(v)) {
+        if (cfg[2].selectedVowels.size > 1) cfg[2].selectedVowels.delete(v);
+      } else {
+        cfg[2].selectedVowels.add(v);
+      }
+      buildVowelPills();
+      markReset();
+    };
+  });
+}
+
+function setupSessionPills(containerId, lv) {
+  document.querySelectorAll(`#${containerId} .pill`).forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.n) === cfg[lv].sessionCount);
+    btn.onclick = () => {
+      document.querySelectorAll(`#${containerId} .pill`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      cfg[lv].sessionCount = parseInt(btn.dataset.n);
+      markReset();
+    };
+  });
+}
+
+function setupCasePills(containerId, lv) {
+  document.querySelectorAll(`#${containerId} .pill`).forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.case === cfg[lv].caseMode);
+    btn.onclick = () => {
+      document.querySelectorAll(`#${containerId} .pill`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      cfg[lv].caseMode = btn.dataset.case;
+      markReset();
+      if (lv === 1) buildLetterGrid();
+      if (lv === 2) { buildConsonantGrid(); buildVowelPills(); }
+    };
+  });
+}
+
+function setupInterludes(containerId, lv) {
+  document.querySelectorAll(`#${containerId} .interlude-card`).forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.itype === cfg[lv].interludeType);
+    btn.onclick = () => {
+      document.querySelectorAll(`#${containerId} .interlude-card`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      cfg[lv].interludeType = btn.dataset.itype;
+      markReset();
+    };
+  });
+}
+
+function buildLetterGrid() {
+  const grid = document.getElementById('l1-letter-grid');
+  grid.innerHTML = '';
+  ALL_LETTERS.forEach(letter => {
+    const tile = document.createElement('button');
+    tile.className = 'letter-tile' + (cfg[1].selectedLetters.has(letter) ? ' selected' : '');
+    tile.textContent = letter.toUpperCase();
+    tile.onclick = () => {
+      if (cfg[1].selectedLetters.has(letter)) {
+        if (cfg[1].selectedLetters.size > 1) cfg[1].selectedLetters.delete(letter);
+      } else {
+        cfg[1].selectedLetters.add(letter);
+      }
+      tile.classList.toggle('selected', cfg[1].selectedLetters.has(letter));
+      markReset();
+    };
+    grid.appendChild(tile);
+  });
+}
+
+function buildConsonantGrid() {
+  const grid = document.getElementById('l2-consonant-grid');
+  grid.innerHTML = '';
+  const mode = cfg[2].caseMode;
+  ALL_CONSONANTS.forEach(letter => {
+    const tile = document.createElement('button');
+    tile.className = 'letter-tile' + (cfg[2].selectedConsonants.has(letter) ? ' selected' : '');
+    tile.textContent = mode === 'lower' ? letter.toLowerCase() : letter.toUpperCase();
+    tile.onclick = () => {
+      if (cfg[2].selectedConsonants.has(letter)) {
+        if (cfg[2].selectedConsonants.size > 1) cfg[2].selectedConsonants.delete(letter);
+      } else {
+        cfg[2].selectedConsonants.add(letter);
+      }
+      tile.classList.toggle('selected', cfg[2].selectedConsonants.has(letter));
+      markReset();
+    };
+    grid.appendChild(tile);
+  });
+}
+
+function buildVowelPills() {
+  const mode = cfg[2].caseMode;
+  document.querySelectorAll('#l2-vowel-pills .pill').forEach(btn => {
+    const v = btn.dataset.v;
+    btn.textContent = mode === 'lower' ? v.toLowerCase() : v.toUpperCase();
+    btn.classList.toggle('active', cfg[2].selectedVowels.has(v));
+  });
+}
+
+function selectAllLetters(val) {
+  if (val) cfg[1].selectedLetters = new Set(ALL_LETTERS);
+  else      cfg[1].selectedLetters = new Set([ALL_LETTERS[0]]);
+  buildLetterGrid(); markReset();
+}
+function selectAllConsonants(val) {
+  if (val) cfg[2].selectedConsonants = new Set(ALL_CONSONANTS);
+  else      cfg[2].selectedConsonants = new Set([ALL_CONSONANTS[0]]);
+  buildConsonantGrid(); markReset();
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function applyCase(str, mode, isL2) {
+  if (!mode) mode = cfg[activeLevel].caseMode;
+  if (mode === 'upper') return str.toUpperCase();
+  if (mode === 'lower') return str.toLowerCase();
+  // mixed:
+  if (isL2) {
+    // Syllable: consonant uppercase, vowel lowercase → e.g. "Ma", "Di"
+    return str[0].toUpperCase() + (str[1] ? str[1].toLowerCase() : '');
+  }
+  // L1 mixed: random per character
+  return str.split('').map(c => Math.random()<.5 ? c.toUpperCase() : c.toLowerCase()).join('');
+}
+
+function randomFrom(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function shuffle(arr) {
+  for (let i=arr.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function makeInterlude(lv) {
+  const type = cfg[lv].interludeType;
+  if (type === 'color') {
+    return { type:'color', hex: randomFrom(COLORS) };
+  }
+  const set = INTERLUDE_SETS[type];
+  return { type:'emoji', emoji: randomFrom(set) };
+}
+
+// ═══════════════════════════════════════════════════
+// SEQUENCE BUILDERS
+// ═══════════════════════════════════════════════════
+function buildSequence() {
+  const lv = activeLevel;
+  const c = cfg[lv];
+
+  // Build pool of content items
+  let pool = [];
+  if (lv === 1) {
+    const letters = shuffle(ALL_LETTERS.filter(l => c.selectedLetters.has(l)));
+    const n = c.sessionCount > 0 ? c.sessionCount : letters.length;
+    // Fill n slots by cycling through shuffled letters
+    for (let i = 0; i < n; i++)
+      pool.push({ type:'letter', base: letters[i % letters.length] });
+  } else {
+    const consonants = ALL_CONSONANTS.filter(l => c.selectedConsonants.has(l));
+    const vowels     = ALL_VOWELS.filter(v => c.selectedVowels.has(v));
+    let combos = [];
+    for (const cons of consonants)
+      for (const vow of vowels)
+        combos.push(cons + vow);
+    shuffle(combos);
+    const n = c.sessionCount > 0 ? c.sessionCount : combos.length;
+    for (let i = 0; i < n; i++)
+      pool.push({ type:'syllable', base: combos[i % combos.length] });
+  }
+
+  // Interleave: after every 2-3 content items, insert one interlude
+  const items = [];
+  let step = 0;
+  for (const content of pool) {
+    items.push(content);
+    step++;
+    if (step >= 2 + Math.floor(Math.random() * 2)) { // every 2 or 3
+      items.push(makeInterlude(lv));
+      step = 0;
+    }
+  }
+
+  sequence = items;
+  currentIndex = 0;
+  updateProgress();
+}
+
+// ═══════════════════════════════════════════════════
+// DISPLAY
+// ═══════════════════════════════════════════════════
+// Scale font to fit card based on char length
+// ═══════════════════════════════════════════════════
+function fitText(len) {
+  // 1 char = big, 2 chars = medium, 3+ = smaller
+  const sizes = { 1: 'clamp(5rem,28vw,13rem)', 2: 'clamp(3.5rem,20vw,9rem)', 3: 'clamp(2.5rem,14vw,6rem)' };
+  mainText.style.fontSize = sizes[Math.min(len, 3)];
+}
+
+function showItem(item) {
+  mainText.classList.remove('fade-in','fade-out','is-interlude');
+  void mainText.offsetWidth;
+  mainText.classList.add('fade-out');
+
+  setTimeout(() => {
+    mainText.classList.remove('fade-out');
+    const lv = activeLevel;
+    const isLight = document.body.classList.contains('light-mode');
+    const cardBg  = isLight ? '#ffffff' : '#161b22';
+    const cardShadow = isLight ? '0 24px 60px rgba(0,0,0,.12)' : '0 24px 60px rgba(0,0,0,.6)';
+    const textCol = isLight ? '#1a1a2e' : 'white';
+
+    if (item.type === 'letter') {
+      const ch = applyCase(item.base, cfg[lv].caseMode);
+      card.style.background = cardBg;
+      card.style.boxShadow  = cardShadow;
+      mainText.style.color  = textCol;
+      mainText.textContent  = ch;
+      fitText(ch.length);
+      const total = sequence.filter(i=>i.type==='letter').length;
+      const done  = sequence.slice(0, currentIndex).filter(i=>i.type==='letter').length;
+      infoLabel.textContent = `${done} / ${total} Buchstaben`;
+
+    } else if (item.type === 'syllable') {
+      const ch = applyCase(item.base, cfg[lv].caseMode, true);
+      card.style.background = cardBg;
+      card.style.boxShadow  = cardShadow;
+      mainText.style.color  = textCol;
+      mainText.textContent  = ch;
+      fitText(ch.length);
+      const total = sequence.filter(i=>i.type==='syllable').length;
+      const done  = sequence.slice(0, currentIndex).filter(i=>i.type==='syllable').length;
+      infoLabel.textContent = `${done} / ${total} Silben`;
+
+    } else if (item.type === 'color') {
+      card.style.background = item.hex;
+      card.style.boxShadow  = `0 24px 60px ${item.hex}55`;
+      mainText.style.color  = 'transparent';
+      mainText.textContent  = '\u00A0';
+      doBump(); spawnStars();
+
+    } else if (item.type === 'emoji') {
+      card.style.background = '#161b22';
+      card.style.boxShadow  = '0 24px 60px rgba(0,0,0,.6)';
+      mainText.classList.add('is-interlude');
+      mainText.style.color  = 'white';
+      mainText.textContent  = item.emoji;
+      doBump(); spawnStars();
+    }
+
+    void mainText.offsetWidth;
+    mainText.classList.add('fade-in');
+    updateProgress();
+  }, 185);
+}
+
+function doBump() {
+  card.classList.remove('bump');
+  void card.offsetWidth;
+  card.classList.add('bump');
+  setTimeout(() => card.classList.remove('bump'), 400);
+}
+
+function spawnStars() {
+  ['⭐','✨','🌟','💫','🎉'].forEach(emoji => {
+    const el = document.createElement('div');
+    el.className = 'star'; el.textContent = emoji;
+    el.style.left = (15+Math.random()*70)+'%';
+    el.style.top  = (15+Math.random()*70)+'%';
+    el.style.setProperty('--tx',(Math.random()*160-80)+'px');
+    el.style.setProperty('--ty',(-(40+Math.random()*120))+'px');
+    card.appendChild(el);
+    setTimeout(()=>el.remove(),800);
+  });
+}
+
+function updateProgress() {
+  progressBar.style.width = (sequence.length ? currentIndex/sequence.length*100 : 0)+'%';
+}
+
+// ═══════════════════════════════════════════════════
+// PLAYBACK
+// ═══════════════════════════════════════════════════
+function tick() {
+  if (isPaused || !isRunning) return;
+  if (currentIndex >= sequence.length) { finish(); return; }
+  showItem(sequence[currentIndex++]);
+  timer = setTimeout(tick, cfg[activeLevel].speed);
+}
+
+const SVG_PLAY  = `<svg id="pp-svg" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>`;
+const SVG_PAUSE = `<svg id="pp-svg" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>`;
+
+function setPPIcon(playing) {
+  document.getElementById('pp-icon-wrap').innerHTML = playing ? SVG_PAUSE : SVG_PLAY;
+}
+
+function play() {
+  if (!isRunning) { isRunning = true; buildSequence(); }
+  isPaused = false;
+  setPPIcon(true);
+  tick();
+}
+
+function pause() {
+  isPaused = true; clearTimeout(timer);
+  setPPIcon(false);
+}
+
+function togglePlayPause() { isPaused ? play() : pause(); }
+ppBtn.addEventListener('click', togglePlayPause);
+
+// Tap card
+card.addEventListener('click', e => {
+  const rect = card.getBoundingClientRect();
+  const rip = document.createElement('div');
+  rip.className = 'ripple';
+  const sz = Math.max(rect.width,rect.height);
+  rip.style.cssText = `width:${sz}px;height:${sz}px;left:${e.clientX-rect.left-sz/2}px;top:${e.clientY-rect.top-sz/2}px`;
+  card.appendChild(rip);
+  setTimeout(()=>rip.remove(),600);
+
+  if (!isRunning) { play(); return; }
+  clearTimeout(timer);
+  if (currentIndex >= sequence.length) { finish(); return; }
+  showItem(sequence[currentIndex++]);
+  if (!isPaused) timer = setTimeout(tick, cfg[activeLevel].speed);
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('play-view').classList.contains('active')) return;
+  if (e.code==='Space')      { e.preventDefault(); togglePlayPause(); }
+  if (e.code==='ArrowRight') {
+    e.preventDefault();
+    if (!isRunning) { play(); return; }
+    clearTimeout(timer);
+    if (currentIndex < sequence.length) {
+      showItem(sequence[currentIndex++]);
+      if (!isPaused) timer = setTimeout(tick, cfg[activeLevel].speed);
+    }
+  }
+});
+
+function resetPlayState() {
+  clearTimeout(timer); isRunning = false; isPaused = true;
+  currentIndex = 0; sequence = [];
+  progressBar.style.width = '0%';
+  infoLabel.textContent = 'Tippe auf die Karte · zum Starten';
+  setPPIcon(false);
+  card.style.background = '';
+  card.style.boxShadow  = '';
+  mainText.style.color  = 'white';
+  mainText.textContent  = ['🚀','⭐','✨','🎯','💡'][Math.floor(Math.random()*5)];
+  mainText.classList.add('is-interlude');
+}
+
+function finish() {
+  isRunning = false; isPaused = true; setPPIcon(false);
+  const type  = activeLevel === 1 ? 'letter' : 'syllable';
+  const total = sequence.filter(i=>i.type===type).length;
+  const word  = activeLevel === 1 ? 'Buchstaben' : 'Silben';
+  document.getElementById('done-msg').textContent = `${total} ${word} durchgespielt!`;
+  launchConfetti();
+  setTimeout(()=>showView('done-view'),500);
+}
+
+// Confetti
+function launchConfetti() {
+  const cols=['#e74c3c','#3498db','#f1c40f','#2ecc71','#9b59b6','#e67e22'];
+  for(let i=0;i<70;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.style.left=Math.random()*100+'vw';
+    el.style.background=cols[i%cols.length];
+    el.style.borderRadius=i%3===0?'50%':'2px';
+    const s=6+Math.random()*10;
+    el.style.width=el.style.height=s+'px';
+    el.style.setProperty('--dx',(Math.random()*200-100)+'px');
+    el.style.setProperty('--dur',(1.5+Math.random()*2)+'s');
+    el.style.animationDelay=(Math.random()*.4)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),4000);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+initSettingsUI();
+</script>
+</body>
+</html>
