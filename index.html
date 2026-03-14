@@ -592,6 +592,7 @@ document.querySelectorAll('.app-pill').forEach(btn => {
     document.body.classList.remove('light-mode','school-mode');
     if (btn.dataset.mode === 'light')  document.body.classList.add('light-mode');
     if (btn.dataset.mode === 'school') document.body.classList.add('school-mode');
+    if (isRunning || sequence.length > 0) { pause(); resetPlayState(); }
   });
 });
 document.getElementById('done-repeat-btn').addEventListener('click', () => {
