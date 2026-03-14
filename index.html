@@ -271,7 +271,16 @@ body.light-mode .icon-btn:hover { background:rgba(0,0,0,0.12); }
 body.light-mode #done-view h2 { -webkit-text-fill-color:transparent; }
 body.light-mode #level-indicator { background:rgba(0,0,0,.06); }
 
-/* ── DONE ── */
+/* ── FOOTER ── */
+#home-footer {
+  font-size:.7rem; color:var(--dim); text-align:center;
+  margin-top:-8px; display:flex; flex-direction:column; gap:3px; align-items:center;
+}
+#footer-link {
+  color:var(--dim); text-decoration:none; transition:color .15s;
+}
+#footer-link:hover { color:var(--text); }
+#footer-meta { font-size:.68rem; }
 #done-view { gap:20px; text-align:center; }
 #done-view h2 {
   font-weight:900; font-size:clamp(2rem,8vw,3.5rem);
@@ -328,6 +337,9 @@ body.light-mode #level-indicator { background:rgba(0,0,0,.06); }
       </div>
       <div class="level-badge">MA MI MO</div>
     </div>
+  </div>
+  <div id="home-footer">
+    <a id="footer-link" href="https://github.com/jonasprobst/lesenlernen" target="_blank">github.com/jonasprobst/lesenlernen</a><span id="footer-meta"></span>
   </div>
 </div>
 
@@ -1067,6 +1079,22 @@ function launchConfetti() {
     setTimeout(()=>el.remove(),4000);
   }
 }
+
+// ═══════════════════════════════════════════════════
+// FOOTER — fetch latest release from GitHub
+// ═══════════════════════════════════════════════════
+(async () => {
+  try {
+    const res = await fetch('https://api.github.com/repos/jonasprobst/lesenlernen/releases/latest');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const tag  = data.tag_name;
+    const date = new Date(data.published_at).toLocaleDateString('de-CH', { day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('footer-meta').textContent = ` · ${tag} · ${date} · Jonas Probst`;
+  } catch {
+    // offline or no releases yet — link only, already shown
+  }
+})();
 
 // ═══════════════════════════════════════════════════
 // INIT
